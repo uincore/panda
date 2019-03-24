@@ -69,12 +69,12 @@ int main() {
   }
 
   // validate length
-  int len = (int)_app_start[0];
+  int len = (int)_app_start[0];  //头4个字节是整个firmware长度，包含RSANUMBYTES=128个字节的签名和SHA_DIGEST_SIZE=20的摘要
   if ((len < 8) || (len > (0x1000000 - 0x4000 - 4 - RSANUMBYTES))) goto fail;
 
   // compute SHA hash
   uint8_t digest[SHA_DIGEST_SIZE];
-  SHA_hash(&_app_start[1], len-4, digest);
+  SHA_hash(&_app_start[1], len-4, digest); //跳过头4个字节的firmware长度是实际数据的开始，实际长度也是firmware长度-4
 
   // verify RSA signature
   if (RSA_verify(&release_rsa_key, ((void*)&_app_start[0]) + len, RSANUMBYTES, digest, SHA_DIGEST_SIZE)) {

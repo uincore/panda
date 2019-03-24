@@ -11,11 +11,11 @@
 
 #define PULL_EFFECTIVE_DELAY 10
 
-int has_external_debug_serial = 0;
-int is_giant_panda = 0;
+int has_external_debug_serial = 0;  //GPIO A.3    0:default
+int is_giant_panda = 0;             //GPIO B.1    0:default 
 int is_entering_bootmode = 0;
-int revision = PANDA_REV_AB;
-int is_grey_panda = 0;
+int revision = PANDA_REV_AB;        //GPIO A.13   1:PANDA_REV_C 0:PANDA_REV_AB
+int is_grey_panda = 0;              //GPIO !(A.4|A.5|A.6|A.7)
 
 int detect_with_pull(GPIO_TypeDef *GPIO, int pin, int mode) {
   set_gpio_mode(GPIO, pin, MODE_INPUT);
@@ -163,10 +163,10 @@ void set_can_enable(CAN_TypeDef *CAN, int enabled) {
   }
 }
 
-#ifdef PANDA
-  #define LED_RED 9
-  #define LED_GREEN 7
-  #define LED_BLUE 6
+#ifdef PANDA            
+  #define LED_RED 9     //GPIO C.9
+  #define LED_GREEN 7   //GPIO C.7
+  #define LED_BLUE 6    //GPIO C.6
 #else
   #define LED_RED 10
   #define LED_GREEN 11
@@ -243,12 +243,12 @@ void set_usb_power_mode(int mode) {
       set_gpio_output(GPIOB, 2, 0);
       set_gpio_output(GPIOA, 13, 1);
       break;
-    case USB_POWER_CDP:
+    case USB_POWER_CDP:  //充电下行端口(CDP)  充电和USB数据交互同时具备
       // B2,A13: set CDP mode
       set_gpio_output(GPIOB, 2, 1);
       set_gpio_output(GPIOA, 13, 1);
       break;
-    case USB_POWER_DCP:
+    case USB_POWER_DCP:  //专用充电端口(DCP)  500mA-1.5A 不支持任何USB数据交互， D+/D-短接
       // B2,A13: set DCP mode on the charger (breaks USB!)
       set_gpio_output(GPIOB, 2, 0);
       set_gpio_output(GPIOA, 13, 0);

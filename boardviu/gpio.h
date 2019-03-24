@@ -434,7 +434,8 @@ void early() {
   // if wrong chip, reboot
   volatile unsigned int id = DBGMCU->IDCODE;
   #ifdef STM32F4
-    if ((id&0xFFF) != 0x463) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+ //   if ((id&0xFFF) != 0x463) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+    enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;  //STM32F407
   #else
     if ((id&0xFFF) != 0x411) enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
   #endif
