@@ -5,7 +5,7 @@
 // esp = USART1
 uart_ring esp_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
                        .w_ptr_rx = 0, .r_ptr_rx = 0,
-                       .uart = USART1,
+                       .uart = USART2,
                        .callback = NULL};
 
 // lin1, K-LINE = UART5
@@ -23,7 +23,7 @@ uart_ring lin2_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
 void debug_ring_callback(uart_ring *ring);
 uart_ring debug_ring = { .w_ptr_tx = 0, .r_ptr_tx = 0,
                          .w_ptr_rx = 0, .r_ptr_rx = 0,
-                         .uart = USART2,
+                         .uart = USART6,
                          .callback = debug_ring_callback};
 
 
@@ -44,9 +44,21 @@ uart_ring *get_ring_by_number(int a) {
 
 // ***************************** serial port *****************************
 
+int last = 0;
+
 void uart_ring_process(uart_ring *q) {
   enter_critical_section();
-  // TODO: check if external serial is connected
+
+  if(last == 0 ) {
+     set_led(LED_BLUE, 0);
+     last = 1;
+  }
+  else {
+     set_led(LED_BLUE, 1);
+     last = 0;
+  }
+ 
+ // TODO: check if external serial is connected
   int sr = q->uart->SR;
 
   if (q->w_ptr_tx != q->r_ptr_tx) {
@@ -83,8 +95,8 @@ void uart_ring_process(uart_ring *q) {
 
 // interrupt boilerplate
 
-void USART1_IRQHandler(void) { uart_ring_process(&esp_ring); }
-void USART2_IRQHandler(void) { uart_ring_process(&debug_ring); }
+void USART2_IRQHandler(void) { uart_ring_process(&esp_ring); }
+void USART6_IRQHandler(void) { uart_ring_process(&debug_ring); }
 void USART3_IRQHandler(void) { uart_ring_process(&lin2_ring); }
 void UART5_IRQHandler(void) { uart_ring_process(&lin1_ring); }
 
@@ -153,8 +165,8 @@ void clear_uart_buff(uart_ring *q) {
 #define __USART_BRR(_PCLK_, _BAUD_)              ((__DIVMANT((_PCLK_), (_BAUD_)) << 4)|(__DIVFRAQ((_PCLK_), (_BAUD_)) & 0x0F))
 
 void uart_set_baud(USART_TypeDef *u, int baud) {
-  if (u == USART1) {
-    // USART1 is on APB2
+  if (u == USART6 || u == USART1 ) {
+    // USART6 is on APB2  //dinglx
     u->BRR = __USART_BRR(48000000, baud);
   } else {
     u->BRR = __USART_BRR(24000000, baud);
@@ -241,16 +253,18 @@ void uart_init(USART_TypeDef *u, int baud) {
     NVIC_EnableIRQ(USART3_IRQn);
   } else if (u == UART5) {
     NVIC_EnableIRQ(UART5_IRQn);
+  } else if (u == USART6) {
+    NVIC_EnableIRQ(USART6_IRQn);
   }
 }
 
 void putch(const char a) {
   if (has_external_debug_serial) {
-    /*while ((debug_ring.uart->SR & USART_SR_TXE) == 0);
-    debug_ring.uart->DR = a;*/
+    while ((debug_ring.uart->SR & USART_SR_TXE) == 0);
+      debug_ring.uart->DR = a;
 
     // assuming debugging is important if there's external serial connected
-    while (!putc(&debug_ring, a));
+    // while (!putc(&debug_ring, a));
 
     //putc(&debug_ring, a);
   } else {

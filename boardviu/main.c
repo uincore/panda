@@ -496,14 +496,49 @@ void __attribute__ ((noinline)) enable_fpu() {
   SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2));
 }
 
+void test_viu(void)
+{
+  int i;
+  int count = 0;
+  int on;
+
+  while(1)  {
+
+       on = count%2;
+       count ++;
+       set_led(LED_BLUE, on);  
+     
+       for (i = 0; i < 1000000; i++) { /* Wait a bit. */
+                        __asm__("nop");
+       }
+  }
+}
+
 int main() {
   // shouldn't have interrupts here, but just in case
   __disable_irq();
 
   // init early devices
   clock_init();
+
+  // C6,C7 : USART 6 for debugging
+  set_gpio_alternate(GPIOC, 6, GPIO_AF8_USART6);
+  set_gpio_alternate(GPIOC, 7, GPIO_AF8_USART6);
+
   periph_init();
+
+
   detect();
+
+ 
+  // enable main uart if it's connected
+  if (has_external_debug_serial) {
+    // WEIRDNESS: without this gate around the UART, it would "crash", but only if the ESP is enabled
+    // assuming it's because the lines were left floating and spurious noise was on them
+    uart_init(USART6, 115200);
+    set_led(LED_GREEN, 1);
+  }
+
 
   // print hello
   puts("\n\n\n************************ MAIN START ************************\n");
@@ -519,21 +554,26 @@ int main() {
   puts(is_giant_panda ? "  GIANTpanda detected\n" : "  not GIANTpanda\n");
   puts(is_grey_panda ? "  gray panda detected!\n" : "  white panda\n");
   puts(is_entering_bootmode ? "  ESP wants bootmode\n" : "  no bootmode\n");
-  gpio_init();
+  //gpio_init();
 
 #ifdef PANDA
   // panda has an FPU, let's use it!
   enable_fpu();
 #endif
 
+  set_led(LED_BLUE, 1);
+
+/*
   // enable main uart if it's connected
   if (has_external_debug_serial) {
     // WEIRDNESS: without this gate around the UART, it would "crash", but only if the ESP is enabled
     // assuming it's because the lines were left floating and spurious noise was on them
-    uart_init(USART2, 115200);
+    uart_init(USART1, 115200);
   }
+*/
 
-#ifdef PANDA
+//#ifdef PANDA
+#ifdef VIU
   if (is_grey_panda) {
     uart_init(USART1, 9600);
   } else {
@@ -555,24 +595,30 @@ int main() {
   TIM2->EGR = TIM_EGR_UG;
   // use TIM2->CNT to read
 
+
   // enable USB
   usb_init();
 
+//!!!!!!!!!!!!!!!!!!!!!!!
+// loops is here!
   // default to silent mode to prevent issues with Ford
   // hardcode a specific safety mode if you want to force the panda to be in a specific mode
-  safety_set_mode(SAFETY_NOOUTPUT, 0);
-  can_silent = ALL_CAN_SILENT;
-  can_init_all();
+  //safety_set_mode(SAFETY_NOOUTPUT, 0);
+  //can_silent = ALL_CAN_SILENT;
+  //can_init_all();
 
-  adc_init();
+  //test_viu();
+//!!!!!!!!!!!!!!!!!!!!!!!
+
+//dinglx  adc_init();
 
 #ifdef PANDA
-  spi_init();
+//dinglx  spi_init();
 #endif
 
   // set PWM
-  fan_init();
-  fan_set_speed(0);
+//dinglx  fan_init();
+//dinglx  fan_set_speed(0);
 
   puts("**** INTERRUPTS ON ****\n");
 
@@ -595,11 +641,12 @@ int main() {
   #endif
 
   for (cnt=0;;cnt++) {
+
     can_live = pending_can_live;
 
     //puth(usart1_dma); puts(" "); puth(DMA2_Stream5->M0AR); puts(" "); puth(DMA2_Stream5->NDTR); puts("\n");
 
-    #ifdef PANDA
+    #ifdef VIU //PANDA
       int current = adc_get(ADCCHAN_CURRENT);
 
       switch (usb_power_mode) {
@@ -683,7 +730,7 @@ int main() {
 
     // turn off the blue LED, turned on by CAN
     #ifdef PANDA
-      set_led(LED_BLUE, 0);
+      set_led(LED_BLUE, cnt%2); //dinglx
     #endif
   }
 

@@ -20,8 +20,8 @@
 #include "drivers/llgpio.h"
 #include "gpio.h"
 
-#include "drivers/spi.h"
-#include "drivers/usb.h"
+//#include "drivers/spi.h"
+//#include "drivers/usb.h"
 //#include "drivers/uart.h"
 
 #ifdef PEDAL
@@ -37,7 +37,7 @@ void puth(unsigned int i) {}
 #include "crypto/sha.h"
 
 #include "obj/cert.h"
-
+/*
 #include "spi_flasher.h"
 
 void __initialize_hardware_early() {
@@ -47,16 +47,25 @@ void __initialize_hardware_early() {
 void fail() {
   soft_flasher_start();
 }
+*/
 
+void gpio_early(void)
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+	set_gpio_output(GPIOD, 13, 1);
+	set_gpio_output(GPIOD, 14, 0);
+	set_gpio_output(GPIOD, 15, 0);
+
+}
 // know where to sig check
 extern void *_app_start[];
-
-// FIXME: sometimes your panda will fail flashing and will quickly blink a single Green LED
-// BOUNTY: $200 coupon on shop.comma.ai or $100 check.
 
 int main() {
   __disable_irq();
   clock_init();
+  gpio_early();
+  goto good;
+/*
   detect();
 
   if (revision == PANDA_REV_C) {
@@ -92,6 +101,7 @@ int main() {
 fail:
   fail();
   return 0;
+*/
 good:
   // jump to flash
   ((void(*)()) _app_start[1])();

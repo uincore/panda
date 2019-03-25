@@ -81,13 +81,13 @@ int can_err_cnt = 0;
 // NEO:         Bus 1=CAN1   Bus 2=CAN2
 // Panda:       Bus 0=CAN1   Bus 1=CAN2   Bus 2=CAN3
 #ifdef PANDA
-  CAN_TypeDef *cans[] = {CAN1, CAN2, CAN3};
-  uint8_t bus_lookup[] = {0,1,2};
-  uint8_t can_num_lookup[] = {0,1,2,-1};
-  int8_t can_forwarding[] = {-1,-1,-1,-1};
-  uint32_t can_speed[] = {5000, 5000, 5000, 333};
-  bool can_autobaud_enabled[] = {false, false, false, false};
-  #define CAN_MAX 3
+  CAN_TypeDef *cans[] = {CAN1, CAN2};
+  uint8_t bus_lookup[] = {0,1};
+  uint8_t can_num_lookup[] = {0,1};
+  int8_t can_forwarding[] = {-1,-1,};
+  uint32_t can_speed[] = {5000, 5000, };
+  bool can_autobaud_enabled[] = {false, false };
+  #define CAN_MAX 2
 #else
   CAN_TypeDef *cans[] = {CAN1, CAN2};
   uint8_t bus_lookup[] = {1,0};
