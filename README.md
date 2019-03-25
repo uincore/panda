@@ -93,3 +93,54 @@ Licensing
 ------
 
 panda software is released under the MIT license unless otherwise specified.
+
+
+
+Firmware mapping
+------
+
+
+uint32_t firmware_len
+uint8_t  code[firmware_len-4]
+uint8_t  signature[RSANUMBYTES-SHA_DIGEST_SIZE]		//RSANUMBYTES=128
+uint8_t  sha_hash_digest[SHA_DIGEST_SIZE]       	//SHA_DIGEST_SIZE=20
+
+
+RSA_verify():
+
+	digest = sha(code,firmware_len-4)
+	signature_out = modpow(public_key, signature_in)
+	for(i= RSANUMBYTES-SHA_DIGEST_SIZE; i<RSANUMBYTES; i++){
+		signature_out[i] ^= sha_hash_digest[i]
+	}
+
+	signature_out[] must be is following:
+
+	static const uint8_t sha_padding_1024[RSANUMBYTES] = {
+	    0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	...
+	    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0x00,
+
+	    // 20 bytes of hash go here.
+	    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	};
+
+因此，firmware生成如下
+
+1. get code[]
+2. get code_len
+3. get sha(code, code_len)   //20byte
+4. fill sha_padding_1024 后20个字节
+5. modpow(private_key, sha_padding_1024)
+6. code[code_len]+sha_padding_1024[] is  total firmware
+
+
+GPIO
+------
+
+UART1 ESP8266
+UART2 Debug Serial
+UART5 L-Line
+

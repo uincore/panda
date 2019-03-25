@@ -1,5 +1,14 @@
 /*
+
+准备工作：
+cd ..
+ln -s ../crypto ./
+make obj/cert.h
+cd tests
+编译：
+
 gcc -DTEST_RSA test_rsa.c ../crypto/rsa.c ../crypto/sha.c && ./a.out
+
 */
 
 #include <stdio.h>
@@ -24,7 +33,7 @@ int main() {
   SHA_hash(&_app_start[1], len-4, digest);
   printf("SHA hash done\n");
 
-  if (!RSA_verify(&rsa_key, ((void*)&_app_start[0]) + len, RSANUMBYTES, digest, SHA_DIGEST_SIZE)) {
+  if (!RSA_verify(&debug_rsa_key, ((void*)&_app_start[0]) + len, RSANUMBYTES, digest, SHA_DIGEST_SIZE)) {
     printf("RSA fail\n");
   } else {
     printf("RSA match!!!\n");

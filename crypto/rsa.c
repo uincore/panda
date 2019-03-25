@@ -244,7 +244,7 @@ int RSA_verify(const RSAPublicKey *key,
         return 0;  // Unsupported exponent.
     }
 
-    for (i = 0; i < len; ++i) {  // Copy input to local workspace.
+    for (i = 0; i < len; ++i) {  // Copy input to local workspace. len= RSANUMBYTES(128)
         buf[i] = signature[i];
     }
 
