@@ -8,6 +8,7 @@ import usb1
 import os
 import time
 import traceback
+import subprocess
 from dfu import PandaDFU
 from esptool import ESPROM, CesantaFlasher
 from flash_release import flash_release
@@ -25,7 +26,13 @@ DEBUG = os.getenv("PANDADEBUG") is not None
 
 def build_st(target, mkfile="Makefile"):
   from panda import BASEDIR
-  assert(os.system('cd %s && make -f %s clean && make -f %s %s >/dev/null' % (os.path.join(BASEDIR, "board"), mkfile, mkfile, target)) == 0)
+  cmd = 'cd %s && make -f %s clean && make -f %s %s >/dev/null' % (os.path.join(BASEDIR, "board"), mkfile, mkfile, target)
+  try:
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+  except subprocess.CalledProcessError as exception:
+    output = exception.output
+    returncode = exception.returncode
+    raise
 
 def parse_can_buffer(dat):
   ret = []
@@ -157,6 +164,7 @@ class Panda(object):
             if device.getVendorID() == 0xbbaa and device.getProductID() in [0xddcc, 0xddee]:
               try:
                 this_serial = device.getSerialNumber()
+                print(this_serial)
               except Exception:
                 continue
               if self._serial is None or this_serial == self._serial:
@@ -166,6 +174,7 @@ class Panda(object):
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
+		self._handle.setAutoDetachKernelDriver(True)  #dinglx
                 if claim:
                   self._handle.claimInterface(0)
                   #self._handle.setInterfaceAltSetting(0, 0) #Issue in USB stack
@@ -243,6 +252,7 @@ class Panda(object):
       pass
 
   def flash(self, fn=None, code=None, reconnect=True):
+    print("flash: main version is " + self.get_version())
     if not self.bootstub:
       self.reset(enter_bootstub=True)
     assert(self.bootstub)
@@ -263,7 +273,7 @@ class Panda(object):
         code = f.read()
 
     # get version
-    print("flash: version is "+self.get_version())
+    print("flash: bootstub version is " + self.get_version())
 
     # do flash
     Panda.flash_static(self._handle, code)
@@ -541,4 +551,3 @@ class Panda(object):
     msg = self.kline_ll_recv(2, bus=bus)
     msg += self.kline_ll_recv(ord(msg[1])-2, bus=bus)
     return msg
-
