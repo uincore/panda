@@ -17,3 +17,13 @@ usage:
 
 You will need to bring it up using `sudo ifconfig can0 up` or
 `sudo ip link set dev can0 up`, depending on your platform.
+
+
+
+Update panda linux driver:
+
+1. sudo rmmod panda
+2. make uninstall
+3. make link
+4. make all
+ 
